@@ -1,6 +1,8 @@
 package com.davv1d.customerevents.events;
 
+import com.davv1d.customerevents.domain.CustomerState;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
@@ -8,9 +10,13 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomerDeactivated implements DomainEvent {
-    public static final String TYPE = "customer.deactivate";
+public class CustomerCreated implements DomainEvent {
+    public static final String TYPE = "customer.created";
     private UUID uuid;
+    @Getter
+    private String name;
+    @Getter
+    private CustomerState state;
     private Instant when;
 
     @Override

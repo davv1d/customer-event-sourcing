@@ -1,35 +1,36 @@
 package com.davv1d.customerevents.publisher;
 
+import com.davv1d.customerevents.events.entity.EventDescriptor;
+import com.davv1d.customerevents.repository.PendingEventFetcher;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.integration.annotation.Publisher;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
 
 @Slf4j
 @Component
-@EnableBinding(Source.class)
 public class EventPublisher {
+    private final PublishChannel publishChannel;
+    private final PendingEventFetcher pendingEventFetcher;
 
-//    private final Source source;
-//
-//    public EventPublisher(Source source) {
-//        this.source = source;
-//    }
-//
-//    public void sendEvent(String payload) {
-//        boolean send = source.output().send(MessageBuilder.withPayload(payload).build());
-//        log.info("sent message: " + send);
-//    }
-    @Publisher(channel = Source.OUTPUT)
-    public String sendEvent(String payload, @Header UUID uuid) {
-        System.out.println(payload);
-        return payload;
+    public EventPublisher(PublishChannel publishChannel, PendingEventFetcher pendingEventFetcher) {
+        this.publishChannel = publishChannel;
+        this.pendingEventFetcher = pendingEventFetcher;
+    }
+
+    @Scheduled(fixedRate = 2000)
+    public void publishPending() {
+        pendingEventFetcher.listPending().forEach(this::sendSafely);
+    }
+
+    private EventDescriptor sendSafely(EventDescriptor event) {
+        final String body = event.getBody();
+        try {
+            publishChannel.sendEvent(body, event.getAggregateUUID());
+            pendingEventFetcher.save(event.sent());
+            log.info("send: {}", body);
+        } catch (Exception e) {
+            log.error("cannot send {}", body, e);
+        }
+        return event;
     }
 }

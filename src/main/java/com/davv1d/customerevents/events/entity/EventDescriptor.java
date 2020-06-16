@@ -1,6 +1,8 @@
 package com.davv1d.customerevents.events.entity;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.Instant;
@@ -8,8 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventDescriptor {
 
     public enum Status {
@@ -34,7 +35,7 @@ public class EventDescriptor {
     @Enumerated(EnumType.STRING)
     private Status status = Status.PENDING;
 
-    @Column(name = "AGGREGATE_UUID", nullable = false, length = 36)
+    @Column(name = "AGGREGATE_UUID", nullable = false, length = 36, columnDefinition = "uuid")
     private UUID aggregateUUID;
 
     public EventDescriptor(String body, Instant occurredAt, String type, UUID aggregateUUID) {
@@ -42,6 +43,11 @@ public class EventDescriptor {
         this.occurredAt = occurredAt;
         this.type = type;
         this.aggregateUUID = aggregateUUID;
+    }
+
+    public EventDescriptor sent() {
+        this.status = Status.SENT;
+        return this;
     }
 
     @Override

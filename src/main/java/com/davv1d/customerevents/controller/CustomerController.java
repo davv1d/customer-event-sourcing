@@ -1,30 +1,45 @@
 package com.davv1d.customerevents.controller;
 
-import com.davv1d.customerevents.domain.Customer;
-import com.davv1d.customerevents.service.EventSourcedCustomerService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import com.davv1d.customerevents.command.ActivateCommand;
+import com.davv1d.customerevents.command.ChangeNameCommand;
+import com.davv1d.customerevents.command.CreateCommand;
+import com.davv1d.customerevents.command.DeactivateCommand;
+import com.davv1d.customerevents.service.CustomerService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
+@Slf4j
 @RestController
 public class CustomerController {
 
-    private final EventSourcedCustomerService eventSourcedCustomerService;
+    private final CustomerService customerService;
 
-    public CustomerController(EventSourcedCustomerService eventSourcedCustomerService) {
-        this.eventSourcedCustomerService = eventSourcedCustomerService;
+    public CustomerController(CustomerService customerService) {
+        this.customerService = customerService;
     }
 
-    @GetMapping("/test/{uuid}")
-    public void test(@PathVariable String uuid) {
-//        UUID uuid = UUID.randomUUID();
-        UUID uuid1 = UUID.fromString(uuid);
-        Customer customer = new Customer(uuid1);
-//        customer.activate();
-        customer.changeNameTo("Gowno");
-        customer.activate();
-        eventSourcedCustomerService.save(customer);
+    @PostMapping("/create")
+    public void create(@RequestBody CreateCommand command) {
+        customerService.create(command);
+    }
+
+    @PutMapping("/activate")
+    public void activate(@RequestBody ActivateCommand command) {
+        customerService.activate(command)
+        .onSuccess(log::info)
+        .onFailure(throwable -> log.error(throwable.getMessage()));
+    }
+
+    @PutMapping("/deactivate")
+    public void deactivate(@RequestBody DeactivateCommand command) {
+        customerService.deactivate(command);
+    }
+
+    @PutMapping("/change-name")
+    public void activate(@RequestBody ChangeNameCommand command) {
+        customerService.changeName(command);
     }
 }

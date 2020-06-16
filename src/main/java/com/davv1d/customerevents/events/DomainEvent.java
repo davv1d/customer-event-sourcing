@@ -13,10 +13,11 @@ import java.util.UUID;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = CustomerActivated.TYPE, value = CustomerActivated.class),
         @JsonSubTypes.Type(name = CustomerNameChanged.TYPE, value = CustomerNameChanged.class),
-        @JsonSubTypes.Type(name = CustomerDeactivated.TYPE, value = CustomerDeactivated.class)
+        @JsonSubTypes.Type(name = CustomerDeactivated.TYPE, value = CustomerDeactivated.class),
+        @JsonSubTypes.Type(name = CustomerCreated.TYPE, value = CustomerCreated.class)
 })
 public interface DomainEvent {
-    String type();
-    Instant when();
-    UUID aggregateUuid();
+    String getType();
+    Instant getWhen();
+    UUID getUuid();
 }

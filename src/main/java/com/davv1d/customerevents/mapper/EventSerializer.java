@@ -9,8 +9,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static java.util.stream.Collectors.toList;
 
 @Component
 public class EventSerializer {
@@ -26,7 +28,7 @@ public class EventSerializer {
 
     public EventDescriptor serialize(DomainEvent event) {
         try {
-            return new EventDescriptor(objectMapper.writeValueAsString(event), event.when(), event.type(), event.aggregateUuid());
+            return new EventDescriptor(objectMapper.writeValueAsString(event), event.getWhen(), event.getType(), event.getUuid());
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());
@@ -39,5 +41,11 @@ public class EventSerializer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<EventDescriptor> serialize(List<DomainEvent> events) {
+        return events.stream()
+                .map(this::serialize)
+                .collect(toList());
     }
 }

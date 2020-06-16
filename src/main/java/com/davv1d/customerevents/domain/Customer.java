@@ -1,110 +1,119 @@
 package com.davv1d.customerevents.domain;
 
+import com.davv1d.customerevents.command.*;
 import com.davv1d.customerevents.events.*;
 import com.google.common.collect.ImmutableList;
-import lombok.Data;
+import javaslang.API;
+import javaslang.control.Try;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.With;
 
-import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static javaslang.collection.List.*;
+import static com.davv1d.customerevents.domain.CustomerState.*;
+import static javaslang.API.Case;
+import static javaslang.collection.List.ofAll;
 
-@Data
+@RequiredArgsConstructor
+@With(value = AccessLevel.PRIVATE)
 public class Customer {
+    @Getter
     private final UUID uuid;
-    private String name = "";
-    private CustomerState state = CustomerState.INITIALIZED;
-    private List<DomainEvent> changes = new ArrayList<>();
+    @Getter
+    private final String name;
+    @Getter
+    private final CustomerState state;
+    private final ImmutableList<DomainEvent> changes;
+    private final CustomerEventCreator customerEventCreator = new CustomerEventCreator();
 
-    public Customer(UUID uuid) {
-        this.uuid = uuid;
+    public Customer(CreateCommand command) {
+        CustomerCreated event = (CustomerCreated) customerEventCreator.getEvent(command);
+        this.uuid = event.getUuid();
+        this.name = event.getName();
+        this.state = event.getState();
+        this.changes = ImmutableList.of(event);
     }
 
-    public static Customer recreateFrom(UUID uuid, List<DomainEvent> domainEvents) {
-        return ofAll(domainEvents).foldLeft(new Customer(uuid), Customer::handleEvent);
+    public Customer(DomainEvent event) {
+        CustomerCreated event1 = (CustomerCreated) event;
+        this.uuid = event1.getUuid();
+        this.name = event1.getName();
+        this.state = event1.getState();
+        this.changes = ImmutableList.of(event1);
     }
 
-    private static Customer handleEvent(Customer customer, DomainEvent domainEvent) {
-        switch (domainEvent.type()) {
-            case CustomerActivated.TYPE:
-                return customer.changeOnActivated();
-            case CustomerDeactivated.TYPE:
-                return customer.changeOnDeactivate();
-            case CustomerNameChanged.TYPE:
-                return customer.changeOnNameChanged((CustomerNameChanged) domainEvent);
-            default:
-                return null;
-        }
+
+    private final Function<DomainEvent, Customer> activated = (event) -> this.withState(ACTIVATED);
+
+    private final Function<DomainEvent, Customer> deactivated = (event) -> this.withState(DEACTIVATED);
+
+    private final Function<DomainEvent, Customer> changedName = (event) -> this.withName(((CustomerNameChanged) event).getName());
+
+    private Customer patternMatch(final DomainEvent event) {
+        return API.Match(event.getType()).of(
+                Case((t) -> t.equals(CustomerActivated.TYPE), () -> activated.apply(event)),
+                Case((t) -> t.equals(CustomerDeactivated.TYPE), () -> deactivated.apply(event)),
+                Case((t) -> t.equals(CustomerNameChanged.TYPE), () -> changedName.apply(event)),
+                Case((t) -> t.equals(CustomerCreated.TYPE), () -> new Customer(event))
+        );
     }
 
-    private Customer changeOnNameChanged(CustomerNameChanged customerNameChanged) {
-        this.name = customerNameChanged.getName();
-        return this;
+    private final Function<DomainEvent, Customer> appendChange = (event) -> this.patternMatch(event).addEvent(event);
+
+    public static Customer rebuild(UUID uuid, List<DomainEvent> history) {
+        return ofAll(history)
+                .foldLeft(new Customer(uuid, "", INITIALIZED, ImmutableList.of()), Customer::patternMatch)
+                .markChangesAsCommitted();
     }
 
-    private Customer changeOnDeactivate() {
-        this.state = CustomerState.DEACTIVATED;
-        return this;
+    private Customer addEvent(DomainEvent event) {
+        ImmutableList<DomainEvent> domainEvents = ImmutableList.<DomainEvent>builder()
+                .addAll(changes)
+                .add(event)
+                .build();
+        return this.withChanges(domainEvents);
     }
 
-    private Customer changeOnActivated() {
-        this.state = CustomerState.ACTIVATED;
-        return this;
+    public Try<Customer> activate(ActivateCommand command) {
+        return makeCommand(command, () -> !this.isActivate(), "Customer is activate");
     }
 
-    public void activate() {
-        if (isActivate()) {
-            throw new IllegalStateException();
-        }
-        customerActivated(new CustomerActivated(uuid, Instant.now()));
+    public Try<Customer> deactivate(DeactivateCommand command) {
+        return makeCommand(command, () -> !this.isDeactivate(), "Customer is deactivate");
     }
 
-    private void customerActivated(CustomerActivated customerActivated) {
-        state = CustomerState.ACTIVATED;
-        changes.add(customerActivated);
+    public Try<Customer> changeNameTo(ChangeNameCommand command) {
+        return makeCommand(command, this::isActivate, "Customer is deactivate");
     }
 
-    public void deactivate() {
-        if (isDeactivate()) {
-            throw new IllegalStateException();
-        }
-        customerDeactivated(new CustomerDeactivated(uuid, Instant.now()));
-    }
-
-    private void customerDeactivated(CustomerDeactivated customerDeactivated) {
-        state = CustomerState.DEACTIVATED;
-        changes.add(customerDeactivated);
-    }
-
-    public void changeNameTo(String name) {
-        if (isDeactivate()) {
-            throw new IllegalStateException();
-        }
-        customerNameChanged(new CustomerNameChanged(uuid, name, Instant.now()));
-    }
-
-    private void customerNameChanged(CustomerNameChanged customerNameChanged) {
-        this.name = customerNameChanged.getName();
-        changes.add(customerNameChanged);
+    private Try<Customer> makeCommand(Command command, Supplier<Boolean> condition, String errorMessage) {
+        return Try.of(() -> {
+            if (condition.get()) {
+                return appendChange.apply(customerEventCreator.getEvent(command));
+            } else {
+                throw new IllegalStateException(errorMessage);
+            }
+        });
     }
 
     public boolean isActivate() {
-        return this.state == CustomerState.ACTIVATED;
+        return this.state == ACTIVATED;
     }
 
     public boolean isDeactivate() {
-        return this.state == CustomerState.DEACTIVATED;
+        return this.state == DEACTIVATED;
     }
 
-    public String getName() {
-        return this.name;
+    public ImmutableList<DomainEvent> getUncommittedChanges() {
+        return changes;
     }
 
-    public List<DomainEvent> getChanges() {
-        return ImmutableList.copyOf(changes);
-    }
-
-    public void flushChanges() {
-        this.changes.clear();
+    public Customer markChangesAsCommitted() {
+        return this.withChanges(ImmutableList.of());
     }
 }
