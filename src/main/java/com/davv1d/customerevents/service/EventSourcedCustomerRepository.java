@@ -4,7 +4,6 @@ import com.davv1d.customerevents.domain.Customer;
 import com.davv1d.customerevents.events.DomainEvent;
 import com.davv1d.customerevents.events.entity.EventDescriptor;
 import com.davv1d.customerevents.mapper.EventSerializer;
-import com.davv1d.customerevents.publisher.PublishChannel;
 import com.davv1d.customerevents.repository.CustomerRepository;
 import com.davv1d.customerevents.repository.EventStreamRepository;
 import javaslang.API;
@@ -27,11 +26,12 @@ public class EventSourcedCustomerRepository implements CustomerRepository {
         this.eventSerializer = eventSerializer;
     }
 
-    public void save(Customer customer) {
+    public UUID save(Customer customer) {
         List<DomainEvent> changes = customer.getUncommittedChanges();
         List<EventDescriptor> events = eventSerializer.serialize(changes);
         eventStreamRepository.saveEvents(customer.getUuid(), events);
         customer.markChangesAsCommitted();
+        return customer.getUuid();
     }
 
     public Try<Customer> getByUUID(UUID uuid) {

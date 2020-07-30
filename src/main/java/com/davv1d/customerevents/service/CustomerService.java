@@ -5,7 +5,10 @@ import com.davv1d.customerevents.command.ChangeNameCommand;
 import com.davv1d.customerevents.command.CreateCommand;
 import com.davv1d.customerevents.command.DeactivateCommand;
 import com.davv1d.customerevents.domain.Customer;
+import com.davv1d.customerevents.domain.Name;
 import com.davv1d.customerevents.repository.CustomerRepository;
+import com.davv1d.customerevents.repository.NameRepository;
+import com.davv1d.customerevents.validation.Validator;
 import javaslang.control.Try;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,23 +20,25 @@ import java.util.function.Function;
 @Service
 public class CustomerService {
     private final CustomerRepository customerRepository;
+    private final NameRepository nameRepository;
+    private final Validator<CreateCommand> createCommandValidator;
 
-    public CustomerService(CustomerRepository customerRepository) {
+    public CustomerService(CustomerRepository customerRepository, NameRepository nameRepository, Validator<CreateCommand> createCommandValidator) {
         this.customerRepository = customerRepository;
+        this.nameRepository = nameRepository;
+        this.createCommandValidator = createCommandValidator;
     }
 
-    public void create(CreateCommand command) {
-        Customer customer = new Customer(command);
-        customerRepository.save(customer);
+    public Try<CreateCommand> create(CreateCommand command) {
+        return createCommandValidator.valid(command)
+                .onSuccess(command1 -> {
+                    Customer customer = new Customer(command);
+                    nameRepository.save(new Name(command.getName()));
+                    customerRepository.save(customer);
+                });
     }
 
     public Try<String> activate(ActivateCommand command) {
-//        customerRepository.getByUUID(command.getUuid())
-//                .ifPresent(customer -> {
-//                    Try<Customer> customers = customer.activate(command)
-//                            .onSuccess(customerRepository::save)
-//                            .onFailure(throwable -> log.error(throwable.getMessage()));
-//                });
         String successMessage = "Customer with uuid " + command.getUuid() + " is activate";
         return pattern(command.getUuid(), customer -> customer.activate(command), successMessage);
     }

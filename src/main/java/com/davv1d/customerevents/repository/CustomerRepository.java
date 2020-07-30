@@ -6,7 +6,7 @@ import javaslang.control.Try;
 import java.util.UUID;
 
 public interface CustomerRepository {
-    void save(Customer customer);
+    UUID save(Customer customer);
 
     Try<Customer> getByUUID(UUID uuid);
 }

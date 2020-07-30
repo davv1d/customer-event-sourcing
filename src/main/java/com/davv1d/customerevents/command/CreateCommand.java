@@ -1,12 +1,16 @@
 package com.davv1d.customerevents.command;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.davv1d.customerevents.domain.CustomerState;
+import lombok.Value;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
+import java.time.Instant;
+import java.util.UUID;
+
+@Value
 public class CreateCommand implements Command {
-    private String name;
+    UUID uuid;
+    String name;
+    String email;
+    CustomerState state;
+    Instant when;
 }

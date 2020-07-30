@@ -1,15 +1,13 @@
 package com.davv1d.customerevents.command;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
+import java.time.Instant;
 import java.util.UUID;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
+@Value
 public class ChangeNameCommand implements Command{
-    private UUID uuid;
-    private String name;
+    UUID uuid;
+    String name;
+    Instant when;
 }
