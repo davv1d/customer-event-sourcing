@@ -18,9 +18,9 @@ public class Email {
     private Long id;
 
     @Column(name = "email", length = 30, nullable = false)
-    private String value;
+    private String email;
 
-    public Email(String value) {
-        this.value = value;
+    public Email(String email) {
+        this.email = email;
     }
 }

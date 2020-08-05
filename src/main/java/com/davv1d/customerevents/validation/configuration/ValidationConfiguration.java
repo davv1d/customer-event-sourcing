@@ -1,6 +1,7 @@
 package com.davv1d.customerevents.validation.configuration;
 
 import com.davv1d.customerevents.command.CreateCommand;
+import com.davv1d.customerevents.repository.EmailRepository;
 import com.davv1d.customerevents.repository.NameRepository;
 import com.davv1d.customerevents.validation.CreateCommandValidator;
 import com.davv1d.customerevents.validation.Validator;
@@ -14,7 +15,7 @@ public class ValidationConfiguration {
 //    private NameRepository nameRepository;
 
     @Bean
-    public Validator<CreateCommand> createCommandValidator(NameRepository nameRepository) {
-        return new CreateCommandValidator(nameRepository);
+    public Validator<CreateCommand> createCommandValidator(NameRepository nameRepository, EmailRepository emailRepository) {
+        return new CreateCommandValidator(nameRepository, emailRepository);
     }
 }

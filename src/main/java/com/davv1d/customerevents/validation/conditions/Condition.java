@@ -1,20 +1,19 @@
 package com.davv1d.customerevents.validation.conditions;
 
 import lombok.Getter;
+import org.springframework.validation.ObjectError;
 
 import java.util.function.Predicate;
 
 @Getter
 public class Condition<T> {
     private final T valueToCheck;
-    private final String checkedField;
-    private final String errorMessage;
+    private final ObjectError objectError;
     private final Predicate<T> test;
 
-    public Condition(T valueToCheck, String checkedField, String errorMessage, Predicate<T> test) {
+    public Condition(T valueToCheck, ObjectError objectError, Predicate<T> test) {
         this.valueToCheck = valueToCheck;
-        this.checkedField = checkedField;
-        this.errorMessage = errorMessage;
+        this.objectError = objectError;
         this.test = test;
     }
 }

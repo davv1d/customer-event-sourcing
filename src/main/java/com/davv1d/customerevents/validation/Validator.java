@@ -27,8 +27,8 @@ public abstract class Validator<T> {
     private BindException joinErrors(T value, List<Condition<T>> errors) {
         BindException bindException = new BindException(value, value.getClass().getSimpleName());
         for (Condition<T> error : errors) {
-//            bindException.addError();
-            bindException.rejectValue(error.getCheckedField(), "", error.getErrorMessage());
+            bindException.addError(error.getObjectError());
+//            bindException.rejectValue(error.getCheckedField(), "", error.getErrorMessage());
         }
         return bindException;
     }

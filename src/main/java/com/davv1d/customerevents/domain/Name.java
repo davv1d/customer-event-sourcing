@@ -19,9 +19,9 @@ public class Name {
     private Long id;
 
     @Column(name = "name", length = 30, nullable = false)
-    private String value;
+    private String name;
 
-    public Name(String value) {
-        this.value = value;
+    public Name(String name) {
+        this.name = name;
     }
 }
