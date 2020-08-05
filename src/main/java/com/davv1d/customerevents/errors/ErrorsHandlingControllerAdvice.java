@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,5 +22,13 @@ public class ErrorsHandlingControllerAdvice {
                 .map(fieldError -> new Violation(fieldError.getField(), fieldError.getDefaultMessage()))
                 .collect(Collectors.toList());
         return new ValidationErrorResponse(collect);
+    }
+
+    @ExceptionHandler(CustomerIllegalStateException.class)
+    @ResponseStatus(BAD_REQUEST)
+    @ResponseBody
+    public ValidationErrorResponse nullValueInParameters(CustomerIllegalStateException e) {
+        Violation violation = new Violation("state", e.getMessage());
+        return new ValidationErrorResponse(Collections.singletonList(violation));
     }
 }

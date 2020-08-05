@@ -25,12 +25,14 @@ public class CustomerServiceImpl implements CustomerService {
     private final NameRepository nameRepository;
     private final EmailRepository emailRepository;
     private final Validator<CreateCommand> createCommandValidator;
+    private final Validator<ChangeNameCommand> changeNameCommandValidator;
 
-    public CustomerServiceImpl(CustomerRepository customerRepository, NameRepository nameRepository, EmailRepository emailRepository, Validator<CreateCommand> createCommandValidator) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, NameRepository nameRepository, EmailRepository emailRepository, Validator<CreateCommand> createCommandValidator, Validator<ChangeNameCommand> changeNameCommandValidator) {
         this.customerRepository = customerRepository;
         this.nameRepository = nameRepository;
         this.emailRepository = emailRepository;
         this.createCommandValidator = createCommandValidator;
+        this.changeNameCommandValidator = changeNameCommandValidator;
     }
 
     public Try<CreateCommand> create(CreateCommand command) {
@@ -55,7 +57,8 @@ public class CustomerServiceImpl implements CustomerService {
 
     public Try<String> changeName(ChangeNameCommand command) {
         String successMessage = "Customer with uuid " + command.getUuid() + " name is " + command.getName();
-        return pattern(command.getUuid(), customer -> customer.changeNameTo(command), successMessage);
+        return changeNameCommandValidator.valid(command)
+                .flatMap(validCommand -> pattern(validCommand.getUuid(), customer -> customer.changeNameTo(validCommand), successMessage));
     }
 
     private Try<String> pattern(UUID uuid, Function<Customer, Try<Customer>> action, String successMessage) {

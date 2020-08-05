@@ -4,6 +4,7 @@ import com.davv1d.customerevents.command.ActivateCommand;
 import com.davv1d.customerevents.command.ChangeNameCommand;
 import com.davv1d.customerevents.command.CreateCommand;
 import com.davv1d.customerevents.command.DeactivateCommand;
+import com.davv1d.customerevents.errors.CustomerIllegalStateException;
 import com.davv1d.customerevents.events.*;
 import com.google.common.collect.ImmutableList;
 import javaslang.API;
@@ -101,20 +102,20 @@ public class Customer {
 
     public Try<Customer> activate(ActivateCommand command) {
         return isActivate() ?
-                failure(new IllegalStateException("Customer is activate")) :
+                failure(new CustomerIllegalStateException("Customer is activate")) :
                 success(appendChange(handleCommand(command)));
     }
 
     public Try<Customer> deactivate(DeactivateCommand command) {
         return isDeactivate() ?
-                failure(new IllegalStateException("Customer is deactivate")) :
+                failure(new CustomerIllegalStateException("Customer is deactivate")) :
                 success(appendChange(handleCommand(command)));
     }
 
     public Try<Customer> changeNameTo(ChangeNameCommand command) {
         return isActivate() ?
                 success(appendChange(handleCommand(command))) :
-                failure(new IllegalStateException("Customer is not activate"));
+                failure(new CustomerIllegalStateException("Customer is not activate"));
     }
 
     public boolean isActivate() { return this.state == ACTIVATED; }
