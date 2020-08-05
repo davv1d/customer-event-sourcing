@@ -14,6 +14,8 @@ import static java.util.Collections.emptyList;
 @Repository
 public interface EventStreamRepository extends CrudRepository<EventStream, Long> {
 
+    boolean existsByAggregateUUID(UUID uuid);
+
     Optional<EventStream> findByAggregateUUID(UUID uuid);
 
     default void saveEvents(UUID aggregateId, List<EventDescriptor> events) {

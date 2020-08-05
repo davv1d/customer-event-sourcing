@@ -3,6 +3,7 @@ package com.davv1d.customerevents.validation.configuration;
 import com.davv1d.customerevents.command.ChangeNameCommand;
 import com.davv1d.customerevents.command.CreateCommand;
 import com.davv1d.customerevents.repository.EmailRepository;
+import com.davv1d.customerevents.repository.EventStreamRepository;
 import com.davv1d.customerevents.repository.NameRepository;
 import com.davv1d.customerevents.validation.ChangeNameCommandValidator;
 import com.davv1d.customerevents.validation.CreateCommandValidator;
@@ -19,7 +20,7 @@ public class ValidationConfiguration {
     }
 
     @Bean
-    public Validator<ChangeNameCommand> changeNameCommandValidator(NameRepository nameRepository) {
-        return new ChangeNameCommandValidator(nameRepository);
+    public Validator<ChangeNameCommand> changeNameCommandValidator(NameRepository nameRepository, EventStreamRepository eventStreamRepository) {
+        return new ChangeNameCommandValidator(nameRepository, eventStreamRepository);
     }
 }
