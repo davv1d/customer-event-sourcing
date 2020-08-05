@@ -31,6 +31,8 @@ public class Customer {
     @Getter
     private final String name;
     @Getter
+    private final String email;
+    @Getter
     private final CustomerState state;
     private final ImmutableList<DomainEvent> changes;
 
@@ -38,6 +40,7 @@ public class Customer {
         CustomerCreated event = handleCommand(command);
         this.uuid = event.getUuid();
         this.name = event.getName();
+        this.email = event.getEmail();
         this.state = event.getState();
         this.changes = ImmutableList.of(event);
     }
@@ -55,7 +58,7 @@ public class Customer {
     }
 
     private CustomerCreated handleCommand(CreateCommand command) {
-        return new CustomerCreated(command.getUuid(), command.getName(), command.getState(), command.getWhen());
+        return new CustomerCreated(command.getUuid(), command.getName(), command.getEmail(), command.getState(), command.getWhen());
     }
 
     private Customer handleEvent(CustomerActivated event) {
@@ -67,7 +70,7 @@ public class Customer {
     private Customer handleEvent(CustomerNameChanged event) { return this.withName(event.getName()); }
 
     private Customer handleEvent(CustomerCreated event) {
-        return new Customer(event.getUuid(), event.getName(), event.getState(), ImmutableList.of(event));
+        return new Customer(event.getUuid(), event.getName(), event.getEmail(), event.getState(), ImmutableList.of(event));
     }
 
     private Customer patternMatch(final DomainEvent event) {
@@ -89,7 +92,7 @@ public class Customer {
                 .markChangesAsCommitted();
     }
 
-    private static Customer getInitialState(UUID uuid) { return new Customer(uuid, "", INITIALIZED, ImmutableList.of()); }
+    private static Customer getInitialState(UUID uuid) { return new Customer(uuid, "", "", INITIALIZED, ImmutableList.of()); }
 
     private Customer addEvent(DomainEvent event) {
         ImmutableList<DomainEvent> domainEvents = ImmutableList.<DomainEvent>builder().addAll(changes).add(event).build();

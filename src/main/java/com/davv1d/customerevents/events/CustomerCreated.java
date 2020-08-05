@@ -16,6 +16,8 @@ public class CustomerCreated implements DomainEvent {
     @Getter
     private String name;
     @Getter
+    private String email;
+    @Getter
     private CustomerState state;
     private Instant when;
 
